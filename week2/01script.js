@@ -18,3 +18,12 @@ zerar.addEventListener("click", () => {
   num.textContent = valor;
   num.style.color = "";
 });
+
+const entrada = document.getElementById("nome");
+entrada.addEventListener('keydown', function(event){
+  if (event.key == 'Enter'){
+    const valDig = entrada.value;
+    alert(`Nome salvo ${valDig}`);
+    entrada.value = "";
+  }
+});
