@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Produtos</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    form { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+    input, select { padding: .4rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #8884; }
+    td.preco { text-align: right; font-variant-numeric: tabular-nums; }
+    #pag { display: flex; align-items: center; gap: .8rem; margin: 1rem 0; }
+    #erro { color: #d33; min-height: 1.4em; }
+    code { background: #8882; padding: .1rem .3rem; }
+  </style>
+</head>
+<body>
+  <h1>Produtos</h1>
+
+  <form id="filtros">
+    <input type="text" name="q" placeholder="Buscar por nome">
+    <select name="categoria">
+      <option value="">Todas as categorias</option>
+      <option>perifericos</option><option>monitores</option><option>audio</option>
+      <option>armazenamento</option><option>acessorios</option><option>moveis</option>
+    </select>
+    <select name="ordem">
+      <option value="">Ordem original</option>
+      <option value="preco">Menor preço</option>
+      <option value="-preco">Maior preço</option>
+      <option value="nome">Nome A–Z</option>
+      <option value="-nome">Nome Z–A</option>
+    </select>
+    <select name="limit">
+      <option>5</option><option>10</option><option>20</option>
+    </select>
+    <button>Filtrar</button>
+  </form>
+
+  <p id="erro"></p>
+  <table>
+    <thead><tr><th>#</th><th>Nome</th><th>Categoria</th><th>Preço</th></tr></thead>
+    <tbody id="corpo"></tbody>
+  </table>
+
+  <div id="pag">
+    <button id="ant">← Anterior</button>
+    <span id="info"></span>
+    <button id="prox">Próxima →</button>
+  </div>
+
+  <p>Última URL chamada: <code id="url"></code></p>
+
+  <script>
+    let page = 1;
+    const form = document.getElementById('filtros');
+
+    async function carregar() {
+      const params = new URLSearchParams();
+      for (const [k, v] of new FormData(form)) if (v !== '') params.set(k, v);
+      params.set('page', page);
+
+      const url = '/api/produtos?' + params;
+      document.getElementById('url').textContent = url;
+
+      const res = await fetch(url);
+      const data = await res.json();
+      const erro = document.getElementById('erro');
+      const corpo = document.getElementById('corpo');
+      corpo.innerHTML = '';
+
+      if (!res.ok) { erro.textContent = 'Erro ' + res.status + ': ' + (data.erro ?? ''); return; }
+      erro.textContent = '';
+
+      for (const p of data.itens) {
+        const tr = document.createElement('tr');
+        [p.id, p.nome, p.categoria].forEach(v => {
+          const td = document.createElement('td'); td.textContent = v; tr.append(td);
+        });
+        const td = document.createElement('td');
+        td.className = 'preco';
+        td.textContent = p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        tr.append(td);
+        corpo.append(tr);
+      }
+
+      const paginas = Math.max(1, Math.ceil(data.total / data.limit));
+      document.getElementById('info').textContent = `Página ${data.page} de ${paginas} (${data.total} itens)`;
+      document.getElementById('ant').disabled = data.page <= 1;
+      document.getElementById('prox').disabled = data.page >= paginas;
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); page = 1; carregar(); });
+    document.getElementById('ant').onclick = () => { page--; carregar(); };
+    document.getElementById('prox').onclick = () => { page++; carregar(); };
+    carregar();
+  </script>
+</body>
+</html>

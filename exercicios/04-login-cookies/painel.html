@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 480px; margin: 3rem auto; padding: 0 1rem; }
+    code { background: #8882; padding: .1rem .3rem; }
+  </style>
+</head>
+<body>
+  <h1>Painel</h1>
+  <p id="msg">Carregando…</p>
+  <p>Cookies visíveis ao JS: <code id="cookies"></code></p>
+  <small>(a sessão é <code>HttpOnly</code>, então não deve aparecer aqui)</small>
+
+  <form method="POST" action="/logout"><button>Sair</button></form>
+
+  <script>
+    document.getElementById('cookies').textContent = document.cookie || '(nenhum)';
+    fetch('/api/eu').then(async (res) => {
+      const data = await res.json();
+      document.getElementById('msg').textContent = res.ok
+        ? 'Olá, ' + data.usuario + '! (GET /api/eu → ' + res.status + ')'
+        : 'Não autenticado (' + res.status + '): ' + data.erro;
+    });
+  </script>
+</body>
+</html>

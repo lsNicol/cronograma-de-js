@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 320px; margin: 4rem auto; padding: 0 1rem; }
+    form { display: grid; gap: .7rem; }
+    input { padding: .5rem; }
+    #erro { color: #d33; }
+    small { opacity: .7; }
+  </style>
+</head>
+<body>
+  <h1>Entrar</h1>
+  <p id="erro" hidden>Usuário ou senha inválidos.</p>
+  <form method="POST" action="/login">
+    <input name="usuario" placeholder="Usuário" required autofocus>
+    <input name="senha" type="password" placeholder="Senha" required>
+    <button>Entrar</button>
+  </form>
+  <small>Dica: admin / 1234</small>
+  <script>
+    if (new URLSearchParams(location.search).has('erro')) {
+      document.getElementById('erro').hidden = false;
+    }
+  </script>
+</body>
+</html>

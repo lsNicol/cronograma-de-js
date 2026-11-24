@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat em tempo real</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 560px; margin: 2rem auto; padding: 0 1rem; }
+    header { display: flex; justify-content: space-between; align-items: baseline; }
+    #conexao { font-size: .85rem; }
+    .on { color: seagreen; } .off { color: #d33; }
+    #msgs { list-style: none; padding: 0; height: 320px; overflow-y: auto; border: 1px solid #8884; border-radius: 6px; margin: .8rem 0; }
+    #msgs li { padding: .35rem .7rem; }
+    #msgs time { opacity: .55; font-size: .75rem; margin-left: .4rem; }
+    form { display: flex; gap: .5rem; }
+    #texto { flex: 1; }
+    input { padding: .5rem; }
+    #erro { color: #d33; min-height: 1.4em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chat</h1>
+    <div><span id="conexao" class="off">● desconectado</span> · <span id="online">0</span> online</div>
+  </header>
+
+  <ul id="msgs"></ul>
+  <p id="erro"></p>
+
+  <form id="form">
+    <input id="autor" placeholder="Seu nome" size="10" required>
+    <input id="texto" placeholder="Mensagem" autocomplete="off" required>
+    <button>Enviar</button>
+  </form>
+
+  <script>
+    const msgs = document.getElementById('msgs');
+    const conexao = document.getElementById('conexao');
+
+    function adicionar(m) {
+      const li = document.createElement('li');
+      const b = document.createElement('b');
+      b.textContent = m.autor + ': ';
+      const t = document.createTextNode(m.texto);
+      const time = document.createElement('time');
+      time.textContent = new Date(m.hora).toLocaleTimeString('pt-BR');
+      li.append(b, t, time);
+      msgs.append(li);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    async function historico() {
+      const res = await fetch('/api/mensagens');
+      if (!res.ok) return;
+      msgs.innerHTML = '';
+      (await res.json()).forEach(adicionar);
+    }
+
+    const es = new EventSource('/api/eventos');
+    es.onopen = () => { conexao.textContent = '● conectado'; conexao.className = 'on'; historico(); };
+    es.onerror = () => { conexao.textContent = '● reconectando…'; conexao.className = 'off'; };
+    es.addEventListener('mensagem', (e) => adicionar(JSON.parse(e.data)));
+    es.addEventListener('online', (e) => { document.getElementById('online').textContent = e.data; });
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const autor = document.getElementById('autor').value;
+      const texto = document.getElementById('texto');
+      const res = await fetch('/api/mensagens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autor, texto: texto.value }),
+      });
+      const erro = document.getElementById('erro');
+      if (!res.ok) { erro.textContent = (await res.json()).erro ?? 'Erro ' + res.status; return; }
+      erro.textContent = '';
+      texto.value = '';
+    });
+  </script>
+</body>
+</html>

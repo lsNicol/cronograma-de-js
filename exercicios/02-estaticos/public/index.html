@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estáticos</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>Servidor de estáticos</h1>
+  <img src="/logo.svg" alt="logo" width="96" height="96">
+  <p id="js-status">JS ainda não carregou ✗</p>
+  <p class="css-teste">Este texto fica verde se o CSS carregou ✓</p>
+
+  <button id="diag">Rodar diagnóstico</button>
+  <table id="tabela" hidden>
+    <thead><tr><th></th><th>Requisição</th><th>Status (esperado)</th><th>Content-Type</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="/app.js"></script>
+</body>
+</html>

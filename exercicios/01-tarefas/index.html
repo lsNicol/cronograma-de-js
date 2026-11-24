@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tarefas</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    form { display: flex; gap: .5rem; }
+    input[type=text] { flex: 1; padding: .5rem; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; align-items: center; gap: .6rem; padding: .4rem 0; border-bottom: 1px solid #8884; }
+    li span { flex: 1; }
+    #erro { color: #d33; min-height: 1.4em; }
+    pre { background: #8881; padding: .6rem; max-height: 220px; overflow: auto; font-size: .8rem; }
+  </style>
+</head>
+<body>
+  <h1>Tarefas</h1>
+  <form id="form">
+    <input type="text" id="titulo" placeholder="Nova tarefa" autocomplete="off">
+    <button>Adicionar</button>
+  </form>
+  <p id="erro"></p>
+  <ul id="lista"></ul>
+
+  <details open><summary>Log de requisições</summary><pre id="log"></pre></details>
+
+  <script>
+    const log = (...a) => { const p = document.getElementById('log'); p.textContent = a.join(' ') + '\n' + p.textContent; };
+
+    async function api(method, url, body) {
+      const opts = { method, headers: {} };
+      if (body !== undefined) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch {}
+      log(method, url, '→', res.status, text.slice(0, 120));
+      return { res, data };
+    }
+
+    const lista = document.getElementById('lista');
+    const erro = document.getElementById('erro');
+
+    async function carregar() {
+      const { res, data } = await api('GET', '/api/tarefas');
+      if (!res.ok) { erro.textContent = 'Falha ao listar: ' + (data?.erro ?? res.status); return; }
+      lista.innerHTML = '';
+      for (const t of data) {
+        const li = document.createElement('li');
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = t.feita;
+        cb.onchange = async () => {
+          const r = await api('PATCH', '/api/tarefas/' + t.id, { feita: cb.checked });
+          if (!r.res.ok) erro.textContent = r.data?.erro ?? r.res.status;
+          carregar();
+        };
+
+        const span = document.createElement('span');
+        span.textContent = t.titulo;
+        if (t.feita) span.style.textDecoration = 'line-through';
+
+        const del = document.createElement('button');
+        del.textContent = '✕';
+        del.onclick = async () => {
+          const r = await api('DELETE', '/api/tarefas/' + t.id);
+          if (!r.res.ok) erro.textContent = r.data?.erro ?? r.res.status;
+          carregar();
+        };
+
+        li.append(cb, span, del);
+        lista.append(li);
+      }
+    }
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('titulo');
+      const { res, data } = await api('POST', '/api/tarefas', { titulo: input.value });
+      if (!res.ok) { erro.textContent = 'Erro: ' + (data?.erro ?? res.status); return; }
+      erro.textContent = '';
+      input.value = '';
+      carregar();
+    });
+
+    carregar();
+  </script>
+</body>
+</html>

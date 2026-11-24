@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Headers e CORS</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    .linha { display: flex; flex-wrap: wrap; gap: .5rem; margin: .8rem 0; }
+    input { padding: .4rem; flex: 1; min-width: 220px; }
+    pre { background: #8881; padding: .8rem; overflow: auto; font-size: .85rem; }
+    .ok { color: seagreen; } .fail { color: #d33; }
+  </style>
+</head>
+<body>
+  <h1>Headers e CORS</h1>
+  <p>Esta página roda em <code id="origem"></code> e chama a API abaixo.</p>
+
+  <div class="linha">
+    <label>API: <input id="base" value="http://localhost:3000"></label>
+  </div>
+
+  <div class="linha">
+    <button data-m="GET"  data-p="/echo?x=1&y=dois">GET /echo?x=1&amp;y=dois</button>
+    <button data-m="GET"  data-p="/echo" data-h='{"X-Meu-Header":"ola"}'>GET com header customizado</button>
+    <button data-m="POST" data-p="/echo" data-b='{"nome":"Ana"}'>POST JSON</button>
+    <button data-m="PUT"  data-p="/echo" data-b='{"nome":"Bia"}'>PUT JSON</button>
+    <button data-m="GET"  data-p="/nao-existe">GET /nao-existe</button>
+  </div>
+
+  <h3>Resultado</h3>
+  <p id="status">Clique em um botão.</p>
+  <p>X-Request-Id lido pelo JS: <code id="reqid">—</code></p>
+  <pre id="saida"></pre>
+
+  <script>
+    document.getElementById('origem').textContent = location.origin;
+
+    for (const btn of document.querySelectorAll('button[data-m]')) {
+      btn.addEventListener('click', async () => {
+        const { m, p, h, b } = btn.dataset;
+        const opts = { method: m, headers: h ? JSON.parse(h) : {} };
+        if (b) {
+          opts.headers['Content-Type'] = 'application/json';
+          opts.body = b;
+        }
+
+        const status = document.getElementById('status');
+        const saida = document.getElementById('saida');
+        const reqid = document.getElementById('reqid');
+        reqid.textContent = '—';
+
+        try {
+          const res = await fetch(document.getElementById('base').value + p, opts);
+          const id = res.headers.get('x-request-id');
+          reqid.textContent = id ?? '(null: header não exposto via CORS)';
+          status.innerHTML = `<span class="${res.ok ? 'ok' : 'fail'}">${res.status} ${res.statusText}</span>`;
+          saida.textContent = await res.text();
+        } catch (e) {
+          status.innerHTML = '<span class="fail">Falhou (veja o console: provavelmente CORS ou server fora do ar)</span>';
+          saida.textContent = String(e);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
